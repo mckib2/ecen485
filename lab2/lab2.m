@@ -30,7 +30,7 @@ LUT8 = LUT(keys,vals);
 
 r = modulator(sig,LUT8,b,N);
 [ ~,~,x ] = demodulator(r,b,LUT8,N);
-figure(3);
+figure(1);
 plot(r); hold on; plot(x);
 title('demodulator input and the matched filter output');
 
@@ -39,8 +39,12 @@ load('bb8data.mat');
 r = bb8data(2,:);
 [ s,~,x ] = demodulator(r,b,LUT8,N);
 
-figure(4);
+figure(2);
 plot(r); hold on; plot(x);
 
 message8 = m2ascii(s,M);
 disp(message8);
+
+%% Eye and constellation
+eyediagram(r,N,1,N/2);
+scatterplot(x,N);
