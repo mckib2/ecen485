@@ -1,9 +1,8 @@
 %% Modulator
 function [ r ] = modulator(s,lut,b,N)
-    keys = cell(size(s));
-    for ii = 1:numel(s)
-        keys{ii} = s(ii);
-    end
-    x = upsample(cell2mat(values(lut.forward,keys)),N);
+    % Upsame the mappings by N
+    x = upsample(cell2mat(values(lut.forward,num2cell(s))),N);
+    
+    % Pulse-shape filtering
     r = filter(b,1,x);
 end

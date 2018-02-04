@@ -1,21 +1,23 @@
 %% Demodulator
 function [ s,a,x,xk ] = demodulator(r,b,lut,N)
 
-    % Matched filter
-    x = filter(b,1,[0 r]);
+    % Matched filtering, spit a zero out front to make everything work
+    x = filter(b,1,[ 0 r ]);
 
     % Downsample
     xk = downsample(x,N);
-    xk = xk(2:end);
+    xk = xk(2:end); % boot the leading zero we added for filtering
     
     % Make a decision
-    d = cell2mat(keys(lut.reverse));
-    a = zeros(1,numel(xk));
-    s = a;
-    for ii = 1:numel(xk)
-        test_sig = d - xk(ii);
-        [ ~,k ] = min(abs(test_sig));
-        a(ii) = d(k);
-        s(ii) = lut.reverse(a(ii));
-    end
+    d = cell2mat(keys(lut.reverse)); % amplitudes
+    
+    % Realize these are the indices where the Euclidean squared norm is
+    % minimized
+    [ ~,idx ] = min((d.' - xk).^2);
+    
+    % Now grab the coefficients a_hat using those indices
+    a = d(idx);
+    
+    % Reverse look up table to get the recovered signal
+    s = cell2mat(values(lut.reverse,num2cell(a)));
 end
