@@ -29,7 +29,7 @@ vals = { -7*A,-5*A,-3*A,-A, A, 3*A,5*A,7*A };
 LUT8 = LUT(keys,vals);
 
 r = modulator(sig,LUT8,b,N);
-[ ~,~,x ] = demodulator(r,b,LUT8,N);
+[ ~,~,x,~ ] = demodulator(r,b,LUT8,N);
 figure(1);
 plot(r); hold on; plot(x);
 title('demodulator input and the matched filter output');
@@ -37,7 +37,7 @@ title('demodulator input and the matched filter output');
 % Now with the example data to get the message
 load('bb8data.mat');
 r = bb8data(2,:);
-[ s,~,x ] = demodulator(r,b,LUT8,N);
+[ s,~,x,xk ] = demodulator(r,b,LUT8,N);
 
 figure(2);
 plot(r); hold on; plot(x);
@@ -46,5 +46,7 @@ message8 = m2ascii(s,M);
 disp(message8);
 
 %% Eye and constellation
-eyediagram(r,N,1,N/2);
-scatterplot(x,N);
+ed = comm.EyeDiagram('YLimits',[-10 10]);
+ed(r.');
+cd = comm.ConstellationDiagram('XLimits',[-10 10],'ReferenceConstellation',-7:2:7);
+cd(xk.'/A);

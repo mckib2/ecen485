@@ -1,5 +1,5 @@
 %% Demodulator
-function [ s,a,x ] = demodulator(r,b,lut,N)
+function [ s,a,x,xk ] = demodulator(r,b,lut,N)
 
     % Matched filter
     x = filter(b,1,[0 r]);
