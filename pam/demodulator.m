@@ -2,7 +2,7 @@
 function [ s,a,x,xk ] = demodulator(r,b,lut,N)
 
     % Matched filtering, spit a zero out front to make everything work
-    x = filter(b,1,[ 0 r ]);
+    x = filter(fliplr(b),1,[ 0 r ]);
 
     % Downsample
     xk = downsample(x,N);
