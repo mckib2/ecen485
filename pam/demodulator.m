@@ -5,8 +5,7 @@ function [ s,a,x,xk ] = demodulator(r,b,lut,N)
     x = filter(fliplr(b),1,[ 0 r ]);
 
     % Downsample
-    xk = downsample(x,N);
-    xk = xk(2:end); % boot the leading zero we added for filtering
+    xk = downsample(x(N:end),N);
     
     % Make a decision
     d = cell2mat(keys(lut.reverse)); % amplitudes
