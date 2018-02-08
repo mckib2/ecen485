@@ -36,7 +36,7 @@ LUT2 = LUT(keys,vals);
 n = 0:(N*length(s) - 1);
 
 r = modulator(s,LUT2,b,N);
-[ s_hat,~,x,xk ] = demodulator(r,b,LUT2,N);
+[ s_hat,~,~,~ ] = demodulator(r,b,LUT2,N);
 
 s_hat = s_hat(12:end);
 
