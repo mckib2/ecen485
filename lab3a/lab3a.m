@@ -30,13 +30,22 @@ Omega0 = 2*pi*1/4;
 
 s = randi([ 0 (M-1) ],1,200);
 
-keys = {  0,1 };
+keyss = {  0,1 };
 vals = { -A,A };
-LUT2 = LUT(keys,vals);
+LUT2 = LUT(keyss,vals);
 n = 0:(N*length(s) - 1);
 
 r = modulator(s,LUT2,b,N);
-[ s_hat,~,x,xk ] = demodulator(r,b,LUT2,N);
+
+% Matched filtering, spit a zero out front to make everything work
+x = filter(fliplr(b),1,[ zeros([ size(r,1) 1 ]) r ]);
+xk = downsample(x(:,N:end).',N);
+
+% Now make a decision
+d = cell2mat(keys(LUT2.reverse)); % amplitudes
+[ ~,idx ] = min((d - xk).^2,[],2);
+a = d(idx);
+s_hat = cell2mat(values(LUT2.reverse,num2cell(a)));
 
 s_hat = s_hat(12:end);
 
@@ -52,10 +61,20 @@ end
 load('bpskdata.mat');
 r = bpskdata(2,:);
 n = bpskdata(1,:);
-[ s,~,x,xk ] = demodulator(r.*cos(Omega0*n),b,LUT2,N);
+% [ s,~,x,xk ] = demodulator(r.*cos(Omega0*n),b,LUT2,N);
+
+% Matched filtering, spit a zero out front to make everything work
+x = filter(fliplr(b),1,[ zeros([ size(r,1) 1 ]) r.*cos(Omega0*n) ]);
+xk = downsample(x(:,N:end).',N);
+
+% Now make a decision
+d = cell2mat(keys(LUT2.reverse)); % amplitudes
+[ ~,idx ] = min((d - xk).^2,[],2);
+a = d(idx);
+s = cell2mat(values(LUT2.reverse,num2cell(a)));
 
 message = m2ascii(s(end-154:end-N),M);
 disp(message);
 
-% eyediagram(x,N,1,1);
-% scatterplot(xk,N);
+eyediagram(x,N,1,1);
+scatterplot(xk,N);
