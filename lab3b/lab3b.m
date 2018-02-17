@@ -113,10 +113,25 @@ m = m2ascii(s_hat,M);
 disp(m);
 
 %% Get the eye diagram and constellation
-eyediagram(x_t,N,1);
-title('x(t)');
-eyediagram(y_t,N,1);
-title('y(t)');
+try
+    eyediagram(x_t,N,1);
+    title('x(t)');
+    eyediagram(y_t,N,1);
+    title('y(t)');
+catch
+    fprintf('Terrible things are happening with licenses...\n');
+    fprintf('Improvising eye diagrams\n');
+    figure(1);
+    subplot(2,1,1);
+    t = linspace(-.5,.5,N);
+    plot(repmat(t,1,floor(numel(x_t)/N)),x_t(3:end));
+    title('x(t)');
+    
+    subplot(2,1,2);
+    t = linspace(-.5,.5,N);
+    plot(repmat(t,1,floor(numel(y_t)/N)),y_t(3:end));
+    title('y(t)');
+end
 
 figure(3);
 plot(xk,yk,'.'); hold on;

@@ -76,5 +76,17 @@ s = cell2mat(values(LUT2.reverse,num2cell(a)));
 message = m2ascii(s(end-154:end-N),M);
 disp(message);
 
-eyediagram(x,N,1,1);
-scatterplot(xk,N);
+try
+    eyediagram(x,N,1,1);
+    scatterplot(xk,N);
+catch
+    fprintf('Terrible things are happening with licenses...\n');
+    fprintf('Improvising eye diagrams\n');
+    figure(1);
+    t = linspace(-.5,.5,N);
+    plot(repmat(t,1,floor(numel(x)/N)),x(2:end));
+    
+    fprintf('Improvising constellation\n');
+    figure(2);
+    plot(xk,zeros(size(xk)),'p');
+end
