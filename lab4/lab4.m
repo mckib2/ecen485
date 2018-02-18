@@ -1,7 +1,7 @@
-%% Lab 3b
+%% Lab 4
 % Nicholas McKibben
 % ECEn 485
-% 2018-02-10
+% 2018-02-18
 
 clear;
 close all;
@@ -71,7 +71,7 @@ fdelay = span/(2*R);
 I_t = I_t(fdelay*Fs+1:end);
 Q_t = Q_t(fdelay*Fs+1:end);
 
-% For our test signal, it was 4 long - mix in the LO
+% For our test signal, it was numel(sig) long - mix in the LO
 to = 1000*(0:numel(sig)*N - 1)/Fs;
 I_t = I_t.*LOx(to);
 Q_t = Q_t.*LOy(to);
