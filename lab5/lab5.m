@@ -87,6 +87,7 @@ figure(3);
 plot(x_hat,y_hat,'o');
 title('Constellation, 16-ary QAM');
 
+s_hat = zeros(1,DataL);
 for ii = 1:numel(x_hat)
     s_hat(ii) = helper(x_hat(ii)/A,y_hat(ii)/A);
 end
