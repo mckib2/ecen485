@@ -11,6 +11,12 @@ if ~exist('lab0','dir')
     fprintf('Adding lab0 to path...\n');
     addpath('../lab0','-end');
 end
+% This is to get pam helper functions
+if ~exist('pam','dir')
+    fprintf('Adding PAM to path...\n');
+    addpath('../pam','-end');
+end
+
 
 % Params given in lab
 M = 16;
