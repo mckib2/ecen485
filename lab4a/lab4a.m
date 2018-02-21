@@ -1,4 +1,4 @@
-%% Lab 4
+%% Lab 4a
 % Nicholas McKibben
 % ECEn 485
 % 2018-02-18

@@ -1,4 +1,4 @@
-%% Lab 5 - M-ary Quadrature Amplitude Modulation (MQAM)
+%% Lab 4b - M-ary Quadrature Amplitude Modulation (MQAM)
 % Nicholas McKibben
 % ECEn 485
 % 2018-02-18
