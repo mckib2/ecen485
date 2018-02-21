@@ -13,6 +13,7 @@ theta = pi/2;
 zeta = 1/sqrt(2);
 BT = .05;
 N = 500;
+plot_speed = 8; % controls how often plot is refreshed
 
 % design a loop filter
 [ lf_b,lf_a ] = LF(zeta,BT,N);
@@ -29,7 +30,9 @@ for n = 2:N
     out(n) = exp(1j*(w0*n + theta_hat));
     
     % Show us what's going on
-    show(n,N,e,in,out,theta_hat);
+    if ~mod(n,plot_speed)
+        show(n,N,e,in,out,theta_hat);
+    end
 end
 
 function [ theta_hat,e,lf_zf,dds_zf ] = pll(in,lf_b,lf_a,lf_zi,dds_b,dds_a,dds_zi)
