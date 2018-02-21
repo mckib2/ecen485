@@ -27,19 +27,17 @@ dds_zi = zeros(1,max(length(dds_a),length(dds_b))-1);
 out = zeros(1,N); in = out; e = out;
 for n = 2:N
     in(n) = exp(1j*(w0*n + theta));
-    [ theta_hat,e(n),lf_zi,dds_zi ] = pll(in(n)*conj(out(n-1)),lf_b,lf_a,lf_zi,dds_b,dds_a,dds_zi);
+
+    e(n) = angle(in(n)*conj(out(n-1)));
+    [ v,lf_zi ] = filter(lf_b,lf_a,e(n),lf_zi);
+    [ theta_hat,dds_zi ] = filter(dds_b,dds_a,v,dds_zi);
+    
     out(n) = exp(1j*(w0*n + theta_hat));
     
     % Show us what's going on
     if ~mod(n,plot_speed)
         show(n,N,e,in,out,theta_hat);
     end
-end
-
-function [ theta_hat,e,lf_zf,dds_zf ] = pll(in,lf_b,lf_a,lf_zi,dds_b,dds_a,dds_zi)
-    e = angle(in);
-    [ v,lf_zf ] = filter(lf_b,lf_a,e,lf_zi);
-    [ theta_hat,dds_zf ] = filter(dds_b,dds_a,v,dds_zi);
 end
 
 function [ b,a ] = DDS(k0,w0)
