@@ -7,14 +7,14 @@ clear;
 close all;
 
 %% First order PLL
-
+% Params
 w0 = 2*pi*.01;
 theta = pi/2;
 zeta = 100;%1/sqrt(2);
 BT = .05;
 N = 1000;
 k0 = .02;
-plot_speed = 8; % controls how often plot is refreshed
+plot_speed = 15; % controls how often plot is refreshed
 
 % design a loop filter
 [ lf_b,lf_a ] = LF(zeta,BT);
@@ -24,15 +24,16 @@ lf_zi = zeros(1,max(length(lf_a),length(lf_b))-1);
 [ dds_b,dds_a ] = DDS(k0,w0);
 dds_zi = zeros(1,max(length(dds_a),length(dds_b))-1);
 
-out = zeros(1,N); in = out; e = out;
-for n = 2:N
-    in(n) = exp(1j*(w0*n + theta));
+% create our input signal
+in = exp(1j*(w0*(1:N) + theta));
 
-    e(n) = angle(in(n)*conj(out(n-1)));
-    [ v,lf_zi ] = filter(lf_b,lf_a,e(n),lf_zi);
-    [ theta_hat,dds_zi ] = filter(dds_b,dds_a,v,dds_zi);
-    
-    out(n) = exp(1j*(w0*n + theta_hat));
+% start looping through each sample
+out = zeros(1,N); e = out;
+for n = 2:N
+    e(n) = angle(in(n)*conj(out(n-1))); % Find the phase error
+    [ v,lf_zi ] = filter(lf_b,lf_a,e(n),lf_zi); % Run through the loop filter
+    [ theta_hat,dds_zi ] = filter(dds_b,dds_a,v,dds_zi); % Run through the DDS
+    out(n) = exp(1j*(w0*n + theta_hat)); % construct our output
     
     % Show us what's going on
     if ~mod(n,plot_speed)
@@ -41,15 +42,18 @@ for n = 2:N
 end
 
 function [ b,a ] = DDS(k0,w0)
+    % Give filter parameters for the DDS
     b = [ k0 w0 ];
     a = [ 1 -1 ];
 end
 
 function [ b,a ] = LF(zeta,BT,N)
+    % Generate loop filter coefficients.
     % There are two ways we can call this function:
     %    > BnT
     %    > BnTs
-    % If we get an N, then we know we have the BnTs case.
+    % If we get an N, then we know we have the BnTs case. If not, then we
+    % can set N = 1 and everything degrades gracefully.
     if nargin < 3
         N = 1;
     end
@@ -72,22 +76,23 @@ function [ b,a ] = LF(zeta,BT,N)
 end
 
 function show(n,N,e,in,out,theta_hat)
+    % Plot phase error and signals
     figure(1);
     subplot(2,1,1);
-    plot(e(1:n),'k-');
+    plot(e(2:n),'k-');
     xlim([ 0 N ]);
     title('Phase Error');
     xlabel(sprintf('$ e(n) $ = %g',e(n)),'Interpreter','latex');
     ylabel('$ \theta_e(n) $','Interpreter','latex');
     
     subplot(2,1,2);
-    plot(real(in(1:n)),'k-');
+    plot(real(in(2:n)),'k-');
     hold on;
-    plot(real(out(1:n)),'k--');
+    plot(real(out(2:n)),'k--');
     xlabel([ '$ \hat{\theta} $ = ' num2str(theta_hat) ],'Interpreter','latex');
     xlim([ 0 N ]);
     ylim([ -1 1 ]);
-    ylabel('$ Re\{cos(\cdot)\} $','Interpreter','latex');
+    ylabel('$ Re\{e^{j(\cdot)}\} $','Interpreter','latex');
     hold off;
     drawnow;
 end
