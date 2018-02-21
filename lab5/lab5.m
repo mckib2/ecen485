@@ -10,17 +10,18 @@ close all;
 
 w0 = 2*pi*.01;
 theta = pi/2;
-zeta = 1/sqrt(2);
+zeta = 100;%1/sqrt(2);
 BT = .05;
-N = 500;
+N = 1000;
+k0 = .02;
 plot_speed = 8; % controls how often plot is refreshed
 
 % design a loop filter
-[ lf_b,lf_a ] = LF(zeta,BT,N);
+[ lf_b,lf_a ] = LF(zeta,BT);
 lf_zi = zeros(1,max(length(lf_a),length(lf_b))-1);
 
 % design dds filter
-[ dds_b,dds_a ] = DDS(1,w0);
+[ dds_b,dds_a ] = DDS(k0,w0);
 dds_zi = zeros(1,max(length(dds_a),length(dds_b))-1);
 
 out = zeros(1,N); in = out; e = out;
@@ -47,6 +48,14 @@ function [ b,a ] = DDS(k0,w0)
 end
 
 function [ b,a ] = LF(zeta,BT,N)
+    % There are two ways we can call this function:
+    %    > BnT
+    %    > BnTs
+    % If we get an N, then we know we have the BnTs case.
+    if nargin < 3
+        N = 1;
+    end
+        
     den = 1 + (2*zeta/N)*(BT/(zeta + 1/(4*zeta))) + ...
         (BT/(N*(zeta + 1/(4*zeta))))^2;
 
@@ -57,8 +66,8 @@ function [ b,a ] = LF(zeta,BT,N)
     K2 = K2_num/den;
     
     % from example
-    K1 = .1479;
-    K2 = .0059;
+%     K1 = .1479;
+%     K2 = .0059;
     
     b = [ (K1+K2) -K1 ];
     a = [ 1 -1 ];
