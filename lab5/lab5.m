@@ -29,22 +29,7 @@ for n = 2:N
     out(n) = exp(1j*(w0*n + theta_hat));
     
     % Show us what's going on
-    figure(1);
-    subplot(2,1,1);
-    plot(e(1:n),'k-');
-    xlim([ 0 N ]);
-    title('Phase Error');
-    xlabel(sprintf('e(n) = %f',e(n)));
-    
-    subplot(2,1,2);
-    plot(real(in(1:n)),'k-');
-    hold on;
-    plot(real(out(1:n)),'k--');
-    xlabel([ '$ \hat{\theta} $ = ' num2str(theta_hat) ],'Interpreter','latex');
-    xlim([ 0 N ]);
-    ylim([ -1 1 ])
-    hold off;
-    drawnow;
+    show(n,N,e,in,out,theta_hat);
 end
 
 function [ theta_hat,e,lf_zf,dds_zf ] = pll(in,lf_b,lf_a,lf_zi,dds_b,dds_a,dds_zi)
@@ -74,4 +59,23 @@ function [ b,a ] = LF(zeta,BT,N)
     
     b = [ (K1+K2) -K1 ];
     a = [ 1 -1 ];
+end
+
+function show(n,N,e,in,out,theta_hat)
+    figure(1);
+    subplot(2,1,1);
+    plot(e(1:n),'k-');
+    xlim([ 0 N ]);
+    title('Phase Error');
+    xlabel(sprintf('e(n) = %g',e(n)));
+    
+    subplot(2,1,2);
+    plot(real(in(1:n)),'k-');
+    hold on;
+    plot(real(out(1:n)),'k--');
+    xlabel([ '$ \hat{\theta} $ = ' num2str(theta_hat) ],'Interpreter','latex');
+    xlim([ 0 N ]);
+    ylim([ -1 1 ])
+    hold off;
+    drawnow;
 end
