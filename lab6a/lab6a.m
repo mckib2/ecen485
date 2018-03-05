@@ -11,7 +11,7 @@ if ~exist('lab0','dir')
     fprintf('Adding lab0 to path...\n');
     addpath('../lab0','-end');
 end
-% This is to get PLL function
+% This is to get PLL functions
 if ~exist('lab5','dir')
     fprintf('Adding lab5 to path...\n');
     addpath('../lab5','-end');
@@ -26,8 +26,8 @@ beta = .5;
 span = 12;
 uw = [ 0 0 0 1 0 1 1 0 ];
 DataL = 224;
-repeats = 4; % The packet is repeated 4 times to allow your PLL to acquire and lock.
-A = E;
+repeats = 4; % The packet is repeated to allow your PLL to acquire and lock
+A = sqrt(E);
 R = 1;
 Fs = R*N;
 
@@ -75,60 +75,89 @@ y_t = y_t(fdelay*Fs+1:end);
 % title('x(t)');
 % eyediagram(y_t,N,1);
 % title('y(t)');
+% eh, you can see it mostly
 
 % Do the downsampling
 xk = downsample(x_t,N);
 yk = downsample(y_t,N);
 
-% Feed into PLL
-R = @(v,t) [ cos(t) -sin(t); sin(t) cos(t) ]*v;
-e = zeros(1,numel(xk));
-out = e; a = e; in = e;
-theta_hat = 0;
-for k = 1:(numel(xk)-1)
-    % Make the decision and mix
-%     a(k) = sign(real(x_t(k)*conj(out(k))));
-%     in(k) = a(k)*yk(k)*conj(out(k));
-    v = R([ xk(k) yk(k) ].',-pi/4);
-%     v = sqrt(xk(k)^2+yk(k)^2)*exp(atan(yk(k)/xk(k)))*conj(out(k));
-    figure(1);
-    hold on;
-    plot(v(1),v(2),'o');
-    xlim([ -1.5 1.5 ]);
-    ylim([ -1.5 1.5 ]);
-    drawnow;
+% Let's try some visualization to get an idea of what we're up against
+R = @(x,y,t) [ cos(t) -sin(t); sin(t) cos(t) ]*[ x; y ];
+for k = 1:numel(xk)
     
-    a(k) = sign(v(1));
-    in(k) = a(k)*v(2);
+    flipped = R(xk(k),yk(k),pi);
+    len(k) = pdist([ xk(k) yk(k); flipped.' ]);
     
-%     e(k) = angle(in(k)); % Find the phase error
-    e(k) = in(k);
-    [ v,lf_zi ] = filter(lf_b,lf_a,e(k),lf_zi); % Run through the loop filter
-    [ theta_hat,dds_zi ] = filter(dds_b,dds_a,v + w0,dds_zi); % Run through the DDS
-    out(k+1) = exp(1j*theta_hat); % construct our output
+%     figure(1);
+%     plot([ xk(k) flipped(1) ],[ yk(k) flipped(2) ],'k');
+%     hold on; plot(xk(k),yk(k),'ko'); hold off;
+%     axis([ -1.5 1.5 -1.5 1.5 ]);
+%     drawnow;
 end
 
-% For fun, let's look at the PLL plots
-figure(2);
-show(numel(xk)-1,numel(xk)-1,e,in,out,theta_hat);
+zers = 17:52:numel(xk);
+s = 1;
+for k = 1:numel(xk)
+    if ismember(k,zers)
+        s = s*-1;
+    end
+    
+    a(k) = s*sign(xk(k));
+end
+
+% % Feed into PLL
+% e = zeros(1,numel(xk));
+% out = e; a = e; in = e; prev = 0; v = e;
+% theta_hat = 0; xpp = NaN; ypp = NaN; % initial conditions
+% for k = 1:(numel(xk)-1)
+%     % CCW rotation on xk,yk to get xp,yp
+%     xp = xk(k)*real(out(k));
+%     yp = yk(k)*imag(out(k));
+%     
+%     figure(3);
+%     plot([ xp xpp ],[ yp ypp ]);
+%     hold on; drawnow;
+%     xpp = xp; ypp = yp;
+%     
+%     % Now make a decision
+%     a(k) = sign(xp); % technically multiply by A, too, but A = 1
+%   
+%     % Now find the phase error
+%     % Heuristic
+%     %e(k) = atan2(yp,xp) - atan2(0,a(k));
+%     % ML
+%     e(k) = yp*a(k);
+% 
+%     [ v(k),lf_zi ] = filter(lf_b,lf_a,e(k),lf_zi); % Run through the loop filter
+%     [ theta_hat,dds_zi ] = filter(dds_b,dds_a,v(k) + w0,dds_zi); % Run through the DDS
+%     out(k+1) = exp(1j*(theta_hat)); % construct our output
+% end
+% 
+% % For fun, let's look at the PLL plots
+% figure(4);
+% show(numel(xk)-1,numel(xk)-1,v,in,out,theta_hat);
 
 %% Check for the unique word
-m = -a;
+m = a;
 m(m < 0) = 0;
 mstr = strjoin(string(m),'');
 idx = strfind(mstr,strjoin(string(uw),''));
-start = idx(end) + numel(uw);
-o = 0;
-m2 = m(start+o:start+DataL-1+o);
-disp(m2ascii(m2,M));
 
+if isempty(idx)
+    fprintf('Checking for pi phase..\n');
+    m = -a;
+    m(m < 0) = 0;
+    mstr = strjoin(string(m),'');
+    idx = strfind(mstr,strjoin(string(uw),''));
+end
 
-% % Grab the message
-% message = m2ascii(m(end-DataL+1:end),M);
-% disp(message);
-
-% test = sign(xk);
-% test(test < 0) = 0;
-% a = 14;
-% message = m2ascii(test(end-DataL+1-a:end-a),M);
-% disp(message);
+% try each possibility
+for ii = 1:numel(idx)
+    start = idx(end-ii+1) + numel(uw);
+    o = 0;
+    try
+        m2 = m(start+o:start+DataL-1+o);
+        fprintf('Message %d: %s\n',ii,m2ascii(m2,M));
+    catch
+    end
+end
