@@ -108,8 +108,8 @@ for k = 1:numel(xk)
 end
 
 % Feed into PLL
-e = zeros(1,numel(xk));
-out = e; a = e; in = e; prev = 0; s = 1;
+e = zeros(1,numel(xk)); theta_hat = 0;
+out = e; v = e; a = e; in = e; prev = 0; s = 1;
 for k = 3:(numel(xk)-1)
     % CCW rotation on xk,yk to get xp,yp
 %     tmp = R(xk(k),yk(k),angle(out(k)))*s;
@@ -134,8 +134,8 @@ for k = 3:(numel(xk)-1)
     end
 
     % Can't seem to get this to work...
-    [ v,lf_zi ] = filter(lf_b,lf_a,e(k),lf_zi); % Run through the loop filter
-    [ theta_hat,dds_zi ] = filter(dds_b,dds_a,v + w0,dds_zi); % Run through the DDS
+    [ v(k),lf_zi ] = filter(lf_b,lf_a,e(k),lf_zi); % Run through the loop filter
+    [ theta_hat,dds_zi ] = filter(dds_b,dds_a,v(k) + w0,dds_zi); % Run through the DDS
     out(k+1) = exp(1j*(theta_hat)); % construct our output
 end
 
