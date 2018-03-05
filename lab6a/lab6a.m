@@ -103,39 +103,45 @@ for k = 1:numel(xk)
     end
     
     a(k) = s*sign(xk(k));
+    
+    len(k) = len(k)*s;
 end
 
-% % Feed into PLL
-% e = zeros(1,numel(xk));
-% out = e; a = e; in = e; prev = 0; v = e;
-% theta_hat = 0; xpp = NaN; ypp = NaN; % initial conditions
-% for k = 1:(numel(xk)-1)
-%     % CCW rotation on xk,yk to get xp,yp
-%     xp = xk(k)*real(out(k));
-%     yp = yk(k)*imag(out(k));
-%     
-%     figure(3);
-%     plot([ xp xpp ],[ yp ypp ]);
-%     hold on; drawnow;
-%     xpp = xp; ypp = yp;
-%     
-%     % Now make a decision
-%     a(k) = sign(xp); % technically multiply by A, too, but A = 1
-%   
-%     % Now find the phase error
-%     % Heuristic
-%     %e(k) = atan2(yp,xp) - atan2(0,a(k));
-%     % ML
-%     e(k) = yp*a(k);
-% 
-%     [ v(k),lf_zi ] = filter(lf_b,lf_a,e(k),lf_zi); % Run through the loop filter
-%     [ theta_hat,dds_zi ] = filter(dds_b,dds_a,v(k) + w0,dds_zi); % Run through the DDS
-%     out(k+1) = exp(1j*(theta_hat)); % construct our output
-% end
-% 
+% Feed into PLL
+e = zeros(1,numel(xk));
+out = e; a = e; in = e; prev = 0; s = 1;
+for k = 3:(numel(xk)-1)
+    % CCW rotation on xk,yk to get xp,yp
+%     tmp = R(xk(k),yk(k),angle(out(k)))*s;
+    tmp = R(xk(k),yk(k),0)*s;
+    xp = tmp(1);
+    yp = tmp(2);
+    
+    % Now make a decision
+    a(k) = sign(xp); % technically multiply by A, too, but A = 1
+  
+    % Now find the phase error
+    % Heuristic
+    %e(k) = atan2(yp,xp) - atan2(0,a(k));
+    % ML
+    e(k) = yp*a(k);
+
+    % Flip signs where we see pi phase shift
+    if (e(k-2) > e(k-1)) && (e(k-1) < e(k))
+        a(k-1) = a(k-1)*-1;
+        a(k) = a(k)*-1;
+        s = s*-1;
+    end
+
+    % Can't seem to get this to work...
+    [ v,lf_zi ] = filter(lf_b,lf_a,e(k),lf_zi); % Run through the loop filter
+    [ theta_hat,dds_zi ] = filter(dds_b,dds_a,v + w0,dds_zi); % Run through the DDS
+    out(k+1) = exp(1j*(theta_hat)); % construct our output
+end
+
 % % For fun, let's look at the PLL plots
-% figure(4);
-% show(numel(xk)-1,numel(xk)-1,v,in,out,theta_hat);
+figure(4);
+show(numel(xk)-1,numel(xk)-1,e,in,out,theta_hat);
 
 %% Check for the unique word
 m = a;
