@@ -107,11 +107,6 @@ end
 %% Look at it
 figure(1);
 plot(e);
-% 
-% figure(2);
-% plot(xk);
-% hold on;
-% plot(yk_sim);
 
 %% Check for the unique word
 uw = [ 0 0 0 1 0 1 1 0 ];
