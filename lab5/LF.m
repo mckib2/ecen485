@@ -1,13 +1,5 @@
-function [ b,a ] = LF(order,zeta,BT,N,k0,kp)
+function [ b,a,K1,K2 ] = LF(order,zeta,BT,N,k0,kp)
     % Generate loop filter coefficients.
-    % There are two ways we can call this function:
-    %    > BnT
-    %    > BnTs
-    % If we get an N, then we know we have the BnTs case. If not, then we
-    % can set N = 1 and everything degrades gracefully.
-    if nargin < 4
-        N = 1;
-    end
     
     if order == 2
         den = 1 + (2*zeta/N)*(BT/(zeta + 1/(4*zeta))) + ...
