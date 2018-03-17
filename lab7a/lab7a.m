@@ -174,5 +174,5 @@ eyediagram(y_t,N);
 title('y(t)');
 
 %% Constellation
-scatterplot(a0 + 1j*a1);
+scatterplot(xk + 1j*yk);
 title('Constellation');
