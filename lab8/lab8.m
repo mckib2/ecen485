@@ -11,6 +11,11 @@ if ~exist('lab5','dir')
     fprintf('Adding lab5 to path...\n');
     addpath('../lab5','-end');
 end
+% This is to get m2ascii function
+if ~exist('lab0','dir')
+    fprintf('Adding lab0 to path...\n');
+    addpath('../lab0','-end');
+end
 
 % Params
 M = 2;
