@@ -117,24 +117,22 @@ for ii = 2:numel(xk)
         a(k) = A*sign(farrow_output);
     end
     
-    % Zero-crossing TED
-    % If strobe is low, TED outputs 0
-    if ~strobe
-        e(ii) = 0;
-    else
-        ted_sa = farrow_output;
-        ted_sb = ted_sa_prev;
-        ted_sc = ted_sa_prev_prev;
-        ted_sd = sign(ted_sc);
-        ted_se = sign(ted_sa);
-        ted_sf = ted_sd - ted_se;
-        ted_sg = ted_sb*ted_sf;
+    ted_sa = farrow_output;
+    ted_sb = ted_sa_prev;
+    ted_sc = ted_sa_prev_prev;
+    ted_sd = sign(ted_sc);
+    ted_se = sign(ted_sa);
+    ted_sf = ted_sd - ted_se;
+    ted_sg = ted_sb*ted_sf;
     
+    % update previous values
+    ted_sa_prev_prev = ted_sa_prev;
+    ted_sa_prev = ted_sa;
+    
+    if strobe
         e(ii) = ted_sg;
-        
-        % update previous values
-        ted_sa_prev_prev = ted_sa_prev;
-        ted_sa_prev = ted_sa;
+    else
+        e(ii) = 0;
     end
    
     % Loop filter it
@@ -155,61 +153,17 @@ for ii = 2:numel(xk)
     eta = eta1;
     
     % update strobe
-    strobe = mod(ii,M);
-    
-    if strobe
+    CNT_next = CNT - W;
+    if CNT_next < 0
+        CNT_next = CNT_next + 1;
+        strobe = 1;
         k = k + 1;
-        mu(k) = mod(eta/W,1);
+        mu(k) = CNT/W;
+    else
+        strobe = 0;
     end
 end
 
-% Book's way
-% CNT_next = 0;
-% mu_next = 0;
-% underflow = 0;
-% vi = 0;
-% TEDBuff = [ 0 0 ];
-% k = 1;
-% ted_e = [];
-% mus = [];
-% xk = xk.';
-% for n = 2:length(xk)-2
-%     CNT = CNT_next;
-%     mu = mu_next;
-%     mus(end+1) = mu;
-%     
-%     idx = n+2:-1:n-1;
-%     v2 = 1/2*[ 1 -1 -1 1 ]*xk(idx);
-%     v1 = 1/2*[ -1 3 -1 -1 ]*xk(idx);
-%     v0 = xk(n);
-%     xI = (mu*v2 + v1)*mu + v0;    
-%     if underflow == 1
-%         e = TEDBuff(1)*(sign(TEDBuff(2)) - sign(xI));
-%         xx(k) = xI;
-%         k = k + 1;
-%         
-%         ted_e(end+1) = e;
-%     else
-%         e = 0;
-%     end
-%     
-%     vp = K1*e;
-%     vi = vi + K2*e;
-%     v = vp + vi;
-%     W = 1/2 + v;
-%     
-%     CNT_next = CNT - W;
-%     if CNT_next < 0
-%         CNT_next = 1 + CNT_next;
-%         underflow = 1;
-%         mu_next = CNT/W;
-%     else
-%         underflow = 0;
-%         mu_next = mu;
-%     end
-%     TEDBuff = [ xI; TEDBuff(1) ];
-% end
-% a = sign(xx);
 
 %% Decode Message
 SYNC = [ 1 0 1 1 0 1 0 0 1 0 1 1 0 1 0 0 ];
