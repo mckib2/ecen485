@@ -32,7 +32,7 @@ b = rcosdesign(beta,span,N);
 BT = .01;
 zeta = 1/sqrt(2);
 order = 2;
-k0 = 1; kp = 1;
+k0 = 1; kp = 2.7;
 [ ~,~,K1,K2 ] = LF(order,zeta,BT,1,k0,kp);
 
 %% Detector time
