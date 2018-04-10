@@ -1,7 +1,7 @@
-%% Lab 10 - Symbol Timing Synchronization for QPSK
+%% Lab 11 - QPSK: Over-the-Air With Pluto Radios
 % Nicholas McKibben
 % ECEn 485
-% 2018-03-31
+% 2018-04-08
 
 clear;
 close all;
@@ -24,7 +24,7 @@ end
 
 %% Params
 M = 4;
-N = 8;
+N = 4;
 E = 1;
 A = sqrt((3*E)/(2*(M - 1)));
 w0 = 2*pi*.3;
@@ -41,17 +41,28 @@ order = 2;
 k0 = 1; kp = 2.7*2;
 [ ~,~,K1,K2 ] = LF(order,zeta,BT,1,k0,kp);
 
+% DDS Loop filter design
+dds_BT = .01;
+dds_zeta = 1/sqrt(2);
+dds_order = 2;
+dds_k0 = 1; dds_kp = kp;
+[ ~,~,dds_K1,dds_K2 ] = LF(dds_order,dds_zeta,dds_BT,1,dds_k0,dds_kp);
+
 %% Detector
 % Get the datar
-load('qpsktrdata.mat');
-r_t = qpsktrdata(2,:);
-t = qpsktrdata(1,:);
+load('TestInput.mat');
+% r_t = qpsktrdata(2,:);
+t = 0:numel(r);
 
 % Mix it down
 LOx = @(x) sqrt(2)*cos(w0*x);
 LOy = @(x) -sqrt(2)*sin(w0*x);
-Ir_t = r_t.*LOx(t);
-Qr_t = r_t.*LOy(t);
+% Ir_t = r_t.*LOx(t);
+% Qr_t = r_t.*LOy(t);
+% G = .001;
+G = sqrt(2)*1e-3;
+Ir_t = G*real(r);
+Qr_t = G*imag(r);
 
 % Do the filterin'
 x_t = conv(b,Ir_t);
@@ -85,7 +96,22 @@ ted_sa_prev_prev1 = 0;
 
 k = 1;
 
+% DDS Initial conditions
+dds_sr = 1;
+dds_skp = 0;
+dds_sop = 0;
+
+% These must be initialized because of the strobe signal
+dds_sh = 0;
+w0dds = 0;
+
 for ii = 2:numel(xk)
+    
+    % CCW Rotation
+    in = xk(ii) + 1j*yk(ii);
+    dds_sa = in*dds_sr;
+    xk(ii) = real(dds_sa);
+    yk(ii) = imag(dds_sa);
     
     CNT = CNT_next;
     
@@ -190,7 +216,36 @@ for ii = 2:numel(xk)
         
         xp(ii) = farrow_output0;
         yp(ii) = farrow_output1;
+        
+        % PED
+        dds_sf = a0(k)*imag(dds_sa);
+        dds_sg = a1(k)*real(dds_sa);
+        dds_sh = dds_sf - dds_sg;
+        
+        % save the error
+        dds_e(k) = dds_sh;
+    else
+        dds_sh = 0;
     end
+    
+    % DDS Loop Filter
+    dds_si = dds_sh*dds_K1;
+    dds_sj = dds_sh*dds_K2;
+    dds_sl = dds_skp; % previous sk
+    dds_sk = dds_sj + dds_sl;
+    dds_sm = dds_si + dds_sk;
+    
+    % DDS
+    dds_sn = dds_sm*dds_k0;
+    dds_sp = dds_sop; % previous so
+    dds_so = dds_sn + w0dds + dds_sp;
+    dds_sq = cos(dds_sp) + 1j*sin(dds_sp);
+    dds_sr = conj(dds_sq);
+    
+    % Update previous DDS vals
+    dds_skp = dds_sk;
+    dds_sop = dds_so;
+    
     
     ted_sa0 = farrow_output0;
     ted_sb0 = ted_sa_prev0;
@@ -251,49 +306,78 @@ for ii = 2:numel(xk)
     end
 end
 
+%% Differential Encoding
+a0 = a0; % Choose sign to get the right answer
+a1 = a1;  % Choose sign to get the right answer
+
+d_hat0 = zeros(size(a0));
+d_hat1 = zeros(size(a1));
+d_hat0(a0 > 0) = 1;
+d_hat1(a1 > 0) = 1;
+
+d_hat = [ d_hat0; d_hat1 ];
+d_hat = char(strjoin(string(d_hat(:).'),''));
+
+% assume 00 at beginning
+d_hat = strcat('00',d_hat);
+
+idx = 0;
+for ii = (1+log2(M)):log2(M):numel(d_hat)
+    idx = idx + 1;
+    cur = strcat(d_hat(ii),d_hat(ii+1));
+    prev =  strcat(d_hat(ii-2),d_hat(ii-1));
+    
+    if strcmp(prev,'00') && strcmp(cur,'00')
+        b(idx) = 0;
+    elseif strcmp(prev,'00') && strcmp(cur,'01')
+        b(idx) = 2;
+    elseif strcmp(prev,'00') && strcmp(cur,'10')
+        b(idx) = 1;
+    elseif strcmp(prev,'00') && strcmp(cur,'11')
+        b(idx) = 3;
+        
+    elseif strcmp(prev,'01') && strcmp(cur,'00')
+        b(idx) = 1;
+    elseif strcmp(prev,'01') && strcmp(cur,'01')
+        b(idx) = 0;
+    elseif strcmp(prev,'01') && strcmp(cur,'10')
+        b(idx) = 3;
+    elseif strcmp(prev,'01') && strcmp(cur,'11')
+        b(idx) = 2;
+        
+        
+    elseif strcmp(prev,'10') && strcmp(cur,'00')
+        b(idx) = 2;
+    elseif strcmp(prev,'10') && strcmp(cur,'01')
+        b(idx) = 3;
+    elseif strcmp(prev,'10') && strcmp(cur,'10')
+        b(idx) = 0;
+    elseif strcmp(prev,'10') && strcmp(cur,'11')
+        b(idx) = 1;
+        
+    elseif strcmp(prev,'11') && strcmp(cur,'00')
+        b(idx) = 3;
+    elseif strcmp(prev,'11') && strcmp(cur,'01')
+        b(idx) = 1;
+    elseif strcmp(prev,'11') && strcmp(cur,'10')
+        b(idx) = 2;
+    elseif strcmp(prev,'11') && strcmp(cur,'11')
+        b(idx) = 0;
+    end
+end
+
 %% Find Unique Word
-uw = [ 0   0   0   0   0   0   0   0;
-       1   1   1   1   1   1   1   1 ];
-m0 = a0; % adjust sign until you find message
-m1 = a1;  % adjust sign until you find message
+uw = ones(1,64);
+idx = strfind(strjoin(string(b),''),strjoin(string(uw),''));
 
-% convert to bits
-m0(m0 < 0) = 0;
-m0(m0 > 0) = 1;
-m1(m1 < 0) = 0;
-m1(m1 > 0) = 1;
-
-% let's try to find the uw
-uw0str = strjoin(string(uw(1,:)),'');
-uw1str = strjoin(string(uw(2,:)),'');
-m0str  = strjoin(string(m0),'');
-m1str  = strjoin(string(m1),'');
-
-id0 = strfind(m0str,uw0str);
-id1 = strfind(m1str,uw1str);
-
-% find matching indicies
-idx = intersect(id0,id1);
-
-keys = { '11', '01', '00', '10' };
-vals = { 3,1,0,2 };
-lut = LUT(keys,vals);
-
-DataL = 2842/2;
+DataL = 3206/2;
 
 % try each possibility
 for ii = 1:numel(idx)
     start = idx(end-ii+1) + numel(uw);
-    o = -N;
+    o = 0;
     try
-        m00 = m0(start+o:start+DataL-1+o);
-        m11 = m1(start+o:start+DataL-1+o);
-        m = [ m00; m11 ];
-        
-        s_hat = zeros(1,size(m,2));
-        for nn = 1:size(m,2)
-            s_hat(nn) = lut.forward(char(strjoin(string(m(:,nn).'),'')));
-        end
+        s_hat = b(start+o:start+DataL-1+o);
         fprintf('Message %d: %s\n',ii,m2ascii(s_hat,M));
     catch
     end
@@ -321,3 +405,8 @@ title('y(t)');
 %% Constellation
 scatterplot(xp(end-DataL:end) + 1j*yp(end-DataL:end));
 title('Constellation');
+
+%% DDS Error
+figure;
+plot(dds_e);
+title('DDS Output');
