@@ -1,7 +1,7 @@
-%% Lab 11
+%% Lab 12
 % Nicholas McKibben
 % ECEn 485
-% 2018-04-09
+% 2018-04-16
 
 close all;
 clear;
@@ -24,9 +24,26 @@ end
 
 % (1,2) Separate I,Q components with appropriate gain
 % G = sqrt(2)*1e-3;
-G = 2.5e-3;
+G = 4e-3;
 % G = 5e-3;
-load('TestInput.mat');
+% load('TestInput.mat');
+
+% Let's recieve the signal
+RX = sdrrx('Pluto');
+RX.RadioID = 'usb:0';
+RX.CenterFrequency = 425e6;
+RX.GainSource = 'AGC Slow Attack';
+RX.ChannelMapping = 1;
+RX.BasebandSampleRate = 4*40e3;
+RX.OutputDataType = 'int16';
+RX.SamplesPerFrame = 36600;
+
+% r = [];
+% for ii = 1:20
+%     r = [ r; RX() ];
+% end
+load('data.mat');
+
 Ir = G*real(r);
 Qr = G*imag(r);
 
@@ -254,13 +271,13 @@ scatterplot(xkk(end-1e4:end) + 1j*ykk(end-1e4:end));
 title('Constellation');
 
 %% Differential Encoding
-a0 = -a0; % Choose sign to get the right answer
-a1 = -a1;  % Choose sign to get the right answer
+m0 = -a0; % Choose sign to get the right answer
+m1 = -a1;  % Choose sign to get the right answer
 
-d_hat0 = zeros(size(a0));
-d_hat1 = zeros(size(a1));
-d_hat0(a0 > 0) = 1;
-d_hat1(a1 > 0) = 1;
+d_hat0 = zeros(size(m0));
+d_hat1 = zeros(size(m1));
+d_hat0(m0 > 0) = 1;
+d_hat1(m1 > 0) = 1;
 
 d_hat = [ d_hat0; d_hat1 ];
 d_hat = char(strjoin(string(d_hat(:).'),''));
